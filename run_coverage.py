@@ -25,7 +25,7 @@ if __name__ == "__main__":
     cov = coverage.coverage(config_file=config_file)
     cov.start()
 
-    from llvmlite.tests import run_tests
+    from llvmir.tests import run_tests
 
     html_dir = 'htmlcov'
     try:

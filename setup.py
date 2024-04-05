@@ -22,7 +22,7 @@ import os
 import sys
 
 
-min_python_version = (3, 9)
+min_python_version = (3, 10)
 
 
 def _version_info_str(int_tuple):
@@ -46,10 +46,10 @@ _guard_py_ver()
 import versioneer
 
 versioneer.VCS = 'git'
-versioneer.versionfile_source = 'llvmlite/_version.py'
-versioneer.versionfile_build = 'llvmlite/_version.py'
+versioneer.versionfile_source = 'llvmir/_version.py'
+versioneer.versionfile_build = 'llvmir/_version.py'
 versioneer.tag_prefix = 'v' # tags are like v1.2.0
-versioneer.parentdir_prefix = 'llvmlite-' # dirname like 'myproject-1.2.0'
+versioneer.parentdir_prefix = 'llvmir-' # dirname like 'myproject-1.2.0'
 
 
 here_dir = os.path.dirname(os.path.abspath(__file__))
@@ -92,9 +92,9 @@ class LlvmliteBuildExt(build_ext):
         build_library_files(self.dry_run)
         # HACK: this makes sure the library file (which is large) is only
         # included in binary builds, not source builds.
-        from llvmlite.utils import get_library_files
+        from llvmir.utils import get_library_files
         self.distribution.package_data = {
-            "llvmlite.binding": get_library_files(),
+            "llvmir.binding": get_library_files(),
         }
 
 
@@ -102,9 +102,9 @@ class LlvmliteInstall(install):
     # Ensure install see the libllvmlite shared library
     # This seems to only be necessary on OSX.
     def run(self):
-        from llvmlite.utils import get_library_files
+        from llvmir.utils import get_library_files
         self.distribution.package_data = {
-            "llvmlite.binding": get_library_files(),
+            "llvmir.binding": get_library_files(),
         }
         install.run(self)
 
@@ -146,10 +146,10 @@ if bdist_wheel:
     class LLvmliteBDistWheel(bdist_wheel):
         def run(self):
             # Ensure the binding file exist when running wheel build
-            from llvmlite.utils import get_library_files
+            from llvmir.utils import get_library_files
             build_library_files(self.dry_run)
             self.distribution.package_data.update({
-                "llvmlite.binding": get_library_files(),
+                "llvmir.binding": get_library_files(),
             })
             # Run wheel build command
             bdist_wheel.run(self)
@@ -170,22 +170,22 @@ if bdist_wheel:
     cmdclass.update({'bdist_wheel': LLvmliteBDistWheel})
 
 # A stub C-extension to make bdist_wheel build an arch dependent build
-ext_stub = Extension(name="llvmlite.binding._stub",
-                     sources=["llvmlite/binding/_stub.c"])
+ext_stub = Extension(name="llvmir.binding._stub",
+                     sources=["llvmir/binding/_stub.c"])
 
 
-packages = ['llvmlite',
-            'llvmlite.binding',
-            'llvmlite.ir',
-            'llvmlite.tests',
+packages = ['llvmir',
+            'llvmir.binding',
+            'llvmir.analysis',
+            'llvmir.tests',
             ]
 
 
-with open('README.rst') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 
-setup(name='llvmlite',
+setup(name='llvmir',
       description="lightweight wrapper around basic LLVM functionality",
       version=versioneer.get_version(),
       classifiers=[
@@ -194,9 +194,6 @@ setup(name='llvmlite',
           "Operating System :: OS Independent",
           "Programming Language :: Python",
           "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.9",
-          "Programming Language :: Python :: 3.10",
-          "Programming Language :: Python :: 3.11",
           "Programming Language :: Python :: 3.12",
           "Topic :: Software Development :: Code Generators",
           "Topic :: Software Development :: Compilers",
@@ -204,7 +201,7 @@ setup(name='llvmlite',
       # Include the separately-compiled shared library
       url="http://llvmlite.readthedocs.io",
       project_urls={
-          "Source": "https://github.com/numba/llvmlite",
+          "Source": "https://github.com/Qi-Zhan/llvm-ir",
       },
       packages=packages,
       license="BSD",

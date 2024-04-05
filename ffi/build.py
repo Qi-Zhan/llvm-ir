@@ -17,7 +17,7 @@ import tempfile
 
 here_dir = os.path.abspath(os.path.dirname(__file__))
 build_dir = os.path.join(here_dir, 'build')
-target_dir = os.path.join(os.path.dirname(here_dir), 'llvmlite', 'binding')
+target_dir = os.path.join(os.path.dirname(here_dir), 'llvmir', 'binding')
 
 is_64bit = sys.maxsize >= 2**32
 
@@ -214,6 +214,7 @@ def main_posix(kind, library_ext):
         default_makeopts = ""
     makeopts = os.environ.get('LLVMLITE_MAKEOPTS', default_makeopts).split()
     subprocess.check_call(['make', '-f', makefile] + makeopts)
+    print(target_dir, library_ext)
     shutil.copy('libllvmlite' + library_ext, target_dir)
 
 

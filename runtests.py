@@ -2,7 +2,7 @@
 
 import sys
 
-from llvmlite.tests import main
+from llvmir.tests import main
 
 
 if __name__ == "__main__":
