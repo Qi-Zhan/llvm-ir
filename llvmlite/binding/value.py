@@ -80,6 +80,41 @@ class ValueKind(enum.IntEnum):
     poison_value = 25
 
 
+class IntPredicate(enum.IntEnum):
+    # The LLVMIntPredicate enum from llvm-c/Core.h
+
+    eq = 32
+    ne = 33
+    ugt = 34
+    uge = 35
+    ult = 36
+    ule = 37
+    sgt = 38
+    sge = 39
+    slt = 40
+    sle = 41
+
+
+class RealPredicate(enum.IntEnum):
+    # The LLVMRealPredicate enum from llvm-c/Core.h
+
+    false = 0 # Always false (always folded)
+    oeq = 1 # True if ordered and equal
+    ogt = 2 # True if ordered and greater than
+    oge = 3 # True if ordered and greater than or equal
+    olt = 4 # True if ordered and less than
+    ole = 5 # True if ordered and less than or equal
+    one = 6 # True if ordered and operands are unequal
+    ord = 7 # True if ordered (no nans)
+    ueq = 8 # True if unordered or equal
+    ugt = 9 # True if unordered or greater than
+    uge = 10 # True if unordered, greater than, or equal
+    ult = 11 # True if unordered or less than
+    ule = 12 # True if unordered, less than, or equal
+    une = 13 # True if unordered or not equal
+    uno = 14 # True if unordered (either nans)
+
+
 class ValueRef(ffi.ObjectRef):
     """A weak reference to a LLVM value.
     """
@@ -326,6 +361,19 @@ class ValueRef(ffi.ObjectRef):
         parents = self._parents.copy()
         parents.update(instruction=self)
         return _IncomingBlocksIterator(it, parents)
+
+    @property
+    def predicate(self):
+        """
+        Return the predicate of this icmp/fmp instruction.
+        """
+        if not self.is_instruction or (self.opcode != 'icmp' and self.opcode != 'fcmp'):
+            raise ValueError('expected icmp instruction value, got %s'
+                             % (self._kind,))
+        if self.opcode == 'icmp':
+            return ffi.lib.LLVMPY_GetICmpPredicate(self)
+        else:
+            return ffi.lib.LLVMPY_GetFCmpPredicate(self)
 
     def get_constant_value(self, signed_int=False, round_fp=False):
         """
@@ -616,3 +664,9 @@ ffi.lib.LLVMPY_GetConstantIntNumWords.restype = c_uint
 ffi.lib.LLVMPY_GetConstantFPValue.argtypes = [ffi.LLVMValueRef,
                                               POINTER(c_bool)]
 ffi.lib.LLVMPY_GetConstantFPValue.restype = c_double
+
+ffi.lib.LLVMPY_GetICmpPredicate.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GetICmpPredicate.restype = c_int
+
+ffi.lib.LLVMPY_GetFCmpPredicate.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GetFCmpPredicate.restype = c_int

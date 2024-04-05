@@ -471,4 +471,10 @@ LLVMPY_GetOpcodeName(LLVMValueRef Val) {
     return LLVMPY_CreateString("");
 }
 
+API_EXPORT(int)
+LLVMPY_GetICmpPredicate(LLVMValueRef Val) { return LLVMGetICmpPredicate(Val); }
+
+API_EXPORT(int)
+LLVMPY_GetFCmpPredicate(LLVMValueRef Val) { return LLVMGetFCmpPredicate(Val); }
+
 } // end extern "C"
