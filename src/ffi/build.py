@@ -17,7 +17,8 @@ import tempfile
 
 here_dir = os.path.abspath(os.path.dirname(__file__))
 build_dir = os.path.join(here_dir, 'build')
-target_dir = os.path.join(os.path.dirname(here_dir), 'llvmir', 'binding')
+target_dir = os.path.join(os.path.dirname(
+    here_dir), 'src', 'llvmir', 'binding')
 
 is_64bit = sys.maxsize >= 2**32
 
@@ -96,7 +97,8 @@ def find_windows_generator():
             return generator
         finally:
             shutil.rmtree(build_dir)
-    raise RuntimeError("No compatible cmake generator installed on this machine")
+    raise RuntimeError(
+        "No compatible cmake generator installed on this machine")
 
 
 def main_windows():
@@ -117,7 +119,9 @@ def main_posix_cmake(kind, library_ext):
         os.mkdir(build_dir)
     try_cmake(here_dir, build_dir, generator)
     subprocess.check_call(['cmake', '--build', build_dir, '--config', config])
-    shutil.copy(os.path.join(build_dir, 'libllvmlite' + library_ext), target_dir)
+    shutil.copy(os.path.join(
+        build_dir, 'libllvmlite' + library_ext), target_dir)
+
 
 def main_posix(kind, library_ext):
     if os.environ.get("LLVMLITE_USE_CMAKE", "0") == "1":
@@ -214,7 +218,6 @@ def main_posix(kind, library_ext):
         default_makeopts = ""
     makeopts = os.environ.get('LLVMLITE_MAKEOPTS', default_makeopts).split()
     subprocess.check_call(['make', '-f', makefile] + makeopts)
-    print(target_dir, library_ext)
     shutil.copy('libllvmlite' + library_ext, target_dir)
 
 
@@ -224,7 +227,7 @@ def main():
     elif sys.platform.startswith(('linux', 'gnu')):
         # Linux and GNU-based OSes (e.g. GNU/Hurd), using the same Makefile
         main_posix('linux', '.so')
-    elif sys.platform.startswith(('freebsd','openbsd')):
+    elif sys.platform.startswith(('freebsd', 'openbsd')):
         main_posix('freebsd', '.so')
     elif sys.platform == 'darwin':
         main_posix('osx', '.dylib')

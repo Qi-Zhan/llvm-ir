@@ -1,6 +1,0 @@
-include *.md setup.py runtests.py run_coverage.py LICENSE
-include versioneer.py
-include llvmir/_version.py
-recursive-include examples *.py *.ll
-recursive-include ffi *.txt *.h *.cpp Makefile.* *.py
-global-exclude CMakeCache.txt

@@ -1,0 +1,36 @@
+[project]
+name = "llvmir"
+version = "0.0.1"
+description = "A Python library for parsing and analyzing existing LLVM IR."
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE"}
+keywords = ["programming analysis", "LLVM binding"]
+authors = [{name = "Qi Zhan", email = "qizhan@zju.edu.cn" }]
+maintainers = [{name = "Qi Zhan", email = "qizhan@zju.edu.cn" }]
+dependencies = [
+    "networkx"
+]
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Compilers",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Qi-Zhan/llvm-ir"
+"Bug Reports" = "https://github.com/Qi-Zhan/llvm-ir/issues"
+"Source" = "https://github.com/Qi-Zhan/llvm-ir"
+
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+myModule = ["*.dylib", "*.so", "*.dll"]
