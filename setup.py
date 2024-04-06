@@ -22,7 +22,7 @@ import os
 import sys
 
 
-min_python_version = (3, 10)
+min_python_version = (3, 12)
 
 
 def _version_info_str(int_tuple):
