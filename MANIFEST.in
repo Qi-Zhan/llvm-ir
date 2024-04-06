@@ -1,0 +1,2 @@
+include src/ffi/*.cpp src/ffi/*.h src/ffi/Makefile* src/ffi/CMakeLists.txt
+include src/llvmir/binding/libllvmlite*
