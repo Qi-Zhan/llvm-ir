@@ -69,6 +69,32 @@ class IntegerType(Type):
         return isinstance(other, IntegerType) and self.width == other.width
 
 
+class DoubleType(Type):
+    __match_args__ = ('width')
+
+    def __init__(self, width):
+        self.width = width
+
+    def __str__(self):
+        return "double"
+
+    def __eq__(self, other):
+        return isinstance(other, DoubleType) and self.width == other.width
+
+
+class FloatType(Type):
+    __match_args__ = ('width')
+
+    def __init__(self, width):
+        self.width = width
+
+    def __str__(self):
+        return "float"
+
+    def __eq__(self, other):
+        return isinstance(other, FloatType) and self.width == other.width
+
+
 class ArrayType(Type):
     __match_args__ = ('element_count', 'element_type')
 

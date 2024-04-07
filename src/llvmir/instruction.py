@@ -60,13 +60,14 @@ class StoreInst(Instruction):
                 value = c
             case _:
                 value = f"%{self.value.get_name()}"
-        return f"store {value}, {get_name_str(self.address.dest)}"
+        return f"store {value}, {get_name_str(self.address.sname())}"
 
 
 class LoadInst(Instruction):
     __match_args__ = ('dest', 'ptr')
 
     def __init__(self, type, name, address: Value, parent, debugloc=None):
+        print("LoadInst", type, name, address, parent, debugloc)
         super().__init__(type, parent, debugloc)
         self.dest = name
         self.address = address
@@ -76,7 +77,7 @@ class LoadInst(Instruction):
         return get_name_str(self.dest)
 
     def __str__(self):
-        return f"{get_name_str(self.dest)} = load {get_name_str(self.address.dest)}"
+        return f"{get_name_str(self.dest)} = load {get_name_str(self.address.sname())}"
 
 
 class GetElementPtrInst(Instruction):
@@ -190,6 +191,10 @@ class BinOp(enum.Enum):
     AND = "and"
     OR = "or"
     XOR = "xor"
+    FADD = "fadd"
+    FSUB = "fsub"
+    FMUL = "fmul"
+    FDIV = "fdiv"
 
     def __str__(self):
         return self.value
@@ -215,6 +220,10 @@ class BinaryOperator(Instruction):
             case "and": self.op = BinOp.AND
             case "or": self.op = BinOp.OR
             case "xor": self.op = BinOp.XOR
+            case "fadd": self.op = BinOp.FADD
+            case "fsub": self.op = BinOp.FSUB
+            case "fmul": self.op = BinOp.FMUL
+            case "fdiv": self.op = BinOp.FDIV
         self.lhs = lhs
         self.rhs = rhs
         self.lhs.add_use(self)
@@ -248,8 +257,30 @@ class PhiNode(Instruction):
         return get_name_str(self.dest)
 
     def __str__(self):
-        incoming_values = ", ".join([f"[{value.sname()}, {block.sname()}]" for value, block in self.incoming_values])
+        incoming_values = ", ".join(
+            [f"[{value.sname()}, {block.sname()}]" for value, block in self.incoming_values])
         return f"{get_name_str(self.dest)} = phi {self.type} {incoming_values}"
+
+
+class SelectInst(Instruction):
+    __match_args__ = ('dest', 'condition', 'true', 'false')
+
+    def __init__(self, type, name, condition: Value, true: Value, false: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.condition = condition
+        self.true = true
+        self.false = false
+        self.condition.add_use(self)
+        self.true.add_use(self)
+        self.false.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = select {self.condition.type} {self.condition.sname()}, {self.true.type} {self.true.sname()}, {self.false.type} {self.false.sname()}"
+
 
 class BitCastInst(Instruction):
     __match_args__ = ('dest', 'value')
@@ -297,6 +328,135 @@ class ZExtInst(Instruction):
 
     def __str__(self):
         return f"{get_name_str(self.dest)} = zext {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class FPExtInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = fpext {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class PtrToIntInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = ptrtoint {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class IntToPtrInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = inttoptr {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class UIToFPInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = uitofp {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class SIToFPInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = sitofp {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class TruncInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = trunc {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class FPTruncInst(Instruction):
+    __match_args__ = ('dest', 'value')
+
+    def __init__(self, type, name, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = fptrunc {self.value.type} {self.value.sname()} to {self.type}"
+
+
+class InsertValueInst(Instruction):
+    __match_args__ = ('dest', 'value', 'index')
+
+    def __init__(self, type, name, value: Value, index: list[int], parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        self.value = value
+        self.index = index
+        self.value.add_use(self)
+
+    def sname(self):
+        return get_name_str(self.dest)
+
+    def __str__(self):
+        return f"{get_name_str(self.dest)} = insertvalue {self.value.type} {self.value.sname()}, {self.type} undef, {self.index}"
 
 
 class Terminator(Instruction):
@@ -349,3 +509,31 @@ class CondBrInst(Terminator):
 
     def __str__(self):
         return f"br i1 {self.condition.sname()}, label {self.true.sname()}, label {self.false.sname()}"
+
+
+class SwitchInst(Terminator):
+    __match_args__ = ('condition', 'default', 'cases')
+
+    def __init__(self, condition: Value, default: Value, cases: list[tuple[Value, Value]], parent, debugloc=None):
+        super().__init__(VoidType(), parent, debugloc)
+        self.condition = condition
+        self.default = default
+        self.cases = cases
+        self.condition.add_use(self)
+        self.default.add_use(self)
+        for (value, block) in self.cases:
+            value.add_use(self)
+            block.add_use(self)
+
+    def __str__(self):
+        cases = ", ".join(
+            [f"[{value.sname()}, {block.sname()}]" for value, block in self.cases])
+        return f"switch {self.condition.sname()}, label {self.default.sname()} [{cases}]"
+
+
+class UnreachableInst(Terminator):
+    def __init__(self, parent, debugloc=None):
+        super().__init__(VoidType(), parent, debugloc)
+
+    def __str__(self):
+        return "unreachable"

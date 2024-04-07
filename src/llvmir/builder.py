@@ -18,19 +18,16 @@ logger.setLevel(logging.DEBUG)
 def needs_name(ffi_obj):
     if ffi_obj.name != '':
         return False
-    opcodes = ['store', 'fence', 'br', 'ret']
+    opcodes = ['store', 'fence', 'br', 'ret', 'switch',
+               'unreachable', 'indirectbr', 'resume', 'cleanupret', 'catchret']
 
     if ffi_obj.is_instruction:
-        if ffi_obj.opcode == 'call':
+        opcode = ffi_obj.opcode
+        if opcode == 'call':
             return str(ffi_obj.type) != 'void'
-        if ffi_obj.opcode in opcodes:
+        if opcode in opcodes:
             return False
     return True
-
-
-#         LLVMOpcode::LLVMInvoke => true,
-#         LLVMOpcode::LLVMCatchSwitch => true,
-#         LLVMOpcode::LLVMCallBr => true,
 
 
 class FunctionContext:
@@ -63,6 +60,15 @@ class ModuleBuilder:
         self._counter = 0
         # matain a set of already built objects
         self._already_built = {}
+
+    @staticmethod
+    def from_path(path: str, run_mem2reg=False, run_instnamer=False) -> Module:
+        if path.endswith(".bc"):
+            return ModuleBuilder.from_bc_path(path, run_mem2reg, run_instnamer)
+        elif path.endswith(".ll"):
+            return ModuleBuilder.from_ir_path(path, run_mem2reg, run_instnamer)
+        else:
+            raise ValueError("Invalid file type")
 
     @staticmethod
     def from_bc_path(path: str, run_mem2reg=False, run_instnamer=False) -> Module:
@@ -165,6 +171,7 @@ class ModuleBuilder:
         assert (bb.is_block)
         self._basic_block = basic_block
         for ffi_instr in bb.instructions:
+            print(ffi_instr)
             instruction = self.build_instruction(ffi_instr)
             if instruction is None:  # skip debug info
                 continue
@@ -228,7 +235,7 @@ class ModuleBuilder:
                             for operand in instr.operands]
                 type = self.build_type(instr.type)
                 return GetElementPtrInst(type, name, operands[0], operands[1:], self._basic_block)
-            case "add" | "sub" | "mul" | "sdiv" | "udiv" | "shl" | "lshr" | "ashr" | "and" | "or" | "xor":
+            case "add" | "sub" | "mul" | "sdiv" | "udiv" | "shl" | "lshr" | "ashr" | "and" | "or" | "xor" | "srem" | "urem" | "fadd" | "fsub" | "fmul" | "fdiv":
                 operands = [self.build_operand(operand)
                             for operand in instr.operands]
                 assert len(operands) == 2
@@ -247,6 +254,34 @@ class ModuleBuilder:
                 type = self.build_type(instr.type)
                 operand = self.build_operand(next(instr.operands))
                 return ZExtInst(type, name, operand, self._basic_block)
+            case "fpext":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return FPExtInst(type, name, operand, self._basic_block)
+            case "ptrtoint":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return PtrToIntInst(type, name, operand, self._basic_block)
+            case "inttoptr":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return IntToPtrInst(type, name, operand, self._basic_block)
+            case "uitofp":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return UIToFPInst(type, name, operand, self._basic_block)
+            case "sitofp":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return SIToFPInst(type, name, operand, self._basic_block)
+            case "trunc":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return TruncInst(type, name, operand, self._basic_block)
+            case "fptrunc":
+                type = self.build_type(instr.type)
+                operand = self.build_operand(next(instr.operands))
+                return FPTruncInst(type, name, operand, self._basic_block)
             case "phi":
                 type = self.build_type(instr.type)
                 blocks = [self._context.get_obj_by_id(self._context.get_id(
@@ -255,6 +290,29 @@ class ModuleBuilder:
                             for operand in instr.operands]
                 incoming_values = list(zip(operands, blocks))
                 return PhiNode(type, name, incoming_values, self._basic_block)
+            case "switch":
+                operands = [self.build_operand(operand)
+                            for operand in instr.operands]
+                condition = operands[0]
+                default = operands[1]
+                cases = []
+                for i in range(2, len(operands), 2):
+                    value = operands[i]
+                    block = operands[i + 1]
+                    cases.append((value, block))
+                return SwitchInst(condition, default, cases, self._basic_block)
+            case "insertvalue":  # FIXME: not implemented
+                operands = [self.build_operand(operand)
+                            for operand in instr.operands]
+                type = self.build_type(instr.type)
+                return InsertValueInst(type, operands[0], operands[1], operands[1:], self._basic_block)
+            case "select":
+                operands = [self.build_operand(operand)
+                            for operand in instr.operands]
+                type = self.build_type(instr.type)
+                return SelectInst(type, name, operands[0], operands[1], operands[2], self._basic_block)
+            case "unreachable":
+                return UnreachableInst(self._basic_block)
             case _:
                 assert False, f"Unsupported instruction {
                     instr} opcode {instr.opcode}"
@@ -293,6 +351,10 @@ class ModuleBuilder:
                 assert False, "Vector type is not supported"
             case TypeKind.metadata:
                 return MetadataType()
+            case TypeKind.double:
+                return DoubleType(type.type_width)
+            case TypeKind.float:
+                return FloatType(type.type_width)
             case _:
                 assert False, f"Unsupported type {type} {type.type_kind}"
 
