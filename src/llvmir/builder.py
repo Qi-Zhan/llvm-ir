@@ -5,11 +5,12 @@ from .function import Function, Argument
 from .block import BasicBlock
 from .instruction import *
 from .type import *
-from .value import Value
+from .value import Value, InlineAsm
 
 from .binding.module import ModuleRef, parse_bitcode, parse_assembly
 from .binding.typeref import TypeRef, TypeKind
 from .binding.passmanagers import create_module_pass_manager
+from .binding.value import ValueKind
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -362,10 +363,17 @@ class ModuleBuilder:
         assert operand.is_operand
         if operand.is_constant:
             return self.build_constant(operand)
-        name = self._context.get_id(str(operand)) if needs_name(
-            operand) else operand.name
-        define_obj = self._context.get_obj_by_id(name)
-        return define_obj
+        match operand.value_kind:
+            case ValueKind.inline_asm:
+                type = self.build_type(operand.type)
+                return InlineAsm(type, str(operand))
+            case ValueKind.instruction | ValueKind.argument | ValueKind.basic_block:
+                name = self._context.get_id(str(operand)) if needs_name(
+                    operand) else operand.name
+                define_obj = self._context.get_obj_by_id(name)
+                return define_obj
+            case _:
+                raise ValueError(f"Unsupported operand {operand}")
 
     def build_argument(self, arg) -> Argument:
         assert arg.is_argument
