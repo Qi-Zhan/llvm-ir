@@ -15,7 +15,7 @@ from tempfile import mkstemp
 
 from llvmir import binding as llvm
 from llvmir.binding import ffi
-from llvmir.tests import TestCase
+# from llvmir.tests import TestCase
 
 llvm_version_major = llvm.llvm_version_info[0]
 
@@ -523,7 +523,7 @@ for.body:
 """
 
 
-class BaseTest(TestCase):
+class BaseTest(unittest.TestCase):
 
     def setUp(self):
         llvm.initialize()

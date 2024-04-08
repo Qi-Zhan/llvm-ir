@@ -19,15 +19,15 @@ Our project bases on the `llvmlite` project, mainly its `binding` module and ffi
 
 ### Compatibility
 
-llvmlite has been tested with Python 3.12 and is likely to work with greater versions.
+llvmlite require at least Python 3.12 and is likely to work with greater versions.
 
-| llvm-ir versions | compatible LLVM versions |
-|-------------------|--------------------------|
-| 0.0.1            | 14.x.x                   |
+Currently, we build LLVM bindings only for 14.x.x.
 
 ## Example
 
 ## Development
+
+### Install
 
 Make sure you have the LLVM development libraries installed.
 On MacOS, you can install them with:
@@ -38,4 +38,11 @@ $ export LLVM_CONFIG=/usr/local/opt/llvm/bin/llvm-config
 
 Then install the package in development mode:
 
-    $ pip install -e .
+    $ make install
+
+### Test
+
+We use `unittest` for testing.
+You can run the tests with:
+
+    $ make test
