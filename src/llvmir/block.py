@@ -3,7 +3,7 @@ Implementation of LLVM IR basic block
 """
 
 
-from .type import LabelType
+from .typed import LabelType
 from .value import Value
 from .utils import get_name_str
 

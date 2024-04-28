@@ -4,7 +4,7 @@ from .module import Module
 from .function import Function, Argument
 from .block import BasicBlock
 from .instruction import *
-from .type import *
+from .typed import *
 from .value import Value, InlineAsm
 
 from .binding.module import ModuleRef, parse_bitcode, parse_assembly
@@ -13,7 +13,7 @@ from .binding.passmanagers import create_module_pass_manager
 from .binding.value import ValueKind
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def needs_name(ffi_obj):
@@ -172,7 +172,6 @@ class ModuleBuilder:
         assert (bb.is_block)
         self._basic_block = basic_block
         for ffi_instr in bb.instructions:
-            print(ffi_instr)
             instruction = self.build_instruction(ffi_instr)
             if instruction is None:  # skip debug info
                 continue

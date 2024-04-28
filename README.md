@@ -8,7 +8,7 @@ The [llvmlite](https://github.com/numba/llvmlite) project provides a lightweight
 However, they do not provide a way to transform existing LLVM IR code to Python data structures.
 
 Our project does not aim to provide a way to generate LLVM IR code, but to analyze existing LLVM IR code.
-Our project bases on the `llvmlite` project, mainly its `binding` module and ffi.
+Our project bases on the `llvmlite` project, mainly its `binding` and `ffi` module.
 
 ## Key Benefits
 
@@ -23,8 +23,6 @@ llvmlite require at least Python 3.12 and is likely to work with greater version
 
 Currently, we build LLVM bindings only for 14.x.x.
 
-## Example
-
 ## Development
 
 ### Install
@@ -34,7 +32,9 @@ On MacOS, you can install them with:
 
     $ brew install llvm
   
-$ export LLVM_CONFIG=/usr/local/opt/llvm/bin/llvm-config
+After
+
+    $ export LLVM_CONFIG=/usr/local/opt/llvm/bin/llvm-config
 
 Then install the package in development mode:
 
@@ -46,3 +46,5 @@ We use `unittest` for testing.
 You can run the tests with:
 
     $ make test
+
+## Example

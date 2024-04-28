@@ -1,6 +1,7 @@
 import collections
 
 from .function import Function
+from typing import Optional
 
 
 class Module:
@@ -20,10 +21,12 @@ class Module:
         with open(path, "wb") as f:
             pickle.dump(self, f)
 
-    def get_function(self, name) -> Function:
+    def get_function(self, name) -> Optional[Function]:
         """
         Get a function by name.
         """
+        if name not in self.functions:
+            return None
         return self.functions[name]
 
     @property

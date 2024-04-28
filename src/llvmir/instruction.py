@@ -5,7 +5,7 @@ Implementation of LLVM IR instructions.
 import enum
 from typing import Optional
 
-from .type import VoidType
+from .typed import VoidType
 from .value import Value, Constant
 from .utils import get_name_str
 
@@ -28,7 +28,7 @@ class Instruction(Value):
 
 
 class AllocaInst(Instruction):
-    __match_args__ = ('dest')
+    __match_args__ = ('dest', 'type')
 
     def __init__(self, type, dest, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -66,18 +66,17 @@ class StoreInst(Instruction):
 class LoadInst(Instruction):
     __match_args__ = ('dest', 'ptr')
 
-    def __init__(self, type, name, address: Value, parent, debugloc=None):
-        print("LoadInst", type, name, address, parent, debugloc)
+    def __init__(self, type, dest, ptr: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
-        self.dest = name
-        self.address = address
-        self.address.add_use(self)
+        self.dest = dest
+        self.ptr = ptr
+        self.ptr.add_use(self)
 
     def sname(self):
         return get_name_str(self.dest)
 
     def __str__(self):
-        return f"{get_name_str(self.dest)} = load {get_name_str(self.address.sname())}"
+        return f"{get_name_str(self.dest)} = load {get_name_str(self.ptr.sname())}"
 
 
 class GetElementPtrInst(Instruction):
@@ -224,6 +223,7 @@ class BinaryOperator(Instruction):
             case "fsub": self.op = BinOp.FSUB
             case "fmul": self.op = BinOp.FMUL
             case "fdiv": self.op = BinOp.FDIV
+            case _: raise ValueError(f"Unknown binary operator {op}")
         self.lhs = lhs
         self.rhs = rhs
         self.lhs.add_use(self)
@@ -236,10 +236,23 @@ class BinaryOperator(Instruction):
         return f"{get_name_str(self.dest)} = {self.op} {self.lhs.sname()}, {self.rhs.sname()}"
 
 
+class UnOp(enum.Enum):
+    NEG = "neg"
+    NOT = "not"
+
+
 class UnaryOperator(Instruction):
-    class Op(enum.Enum):
-        NEG = "neg"
-        NOT = "not"
+    __match_args__ = ('dest', 'op', 'value')
+
+    def __init__(self, type, name, op: str, value: Value, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.dest = name
+        match op:
+            case "neg": self.op = UnOp.NEG
+            case "not": self.op = UnOp.NOT
+            case _: raise ValueError(f"Unknown unary operator {op}")
+        self.value = value
+        self.value.add_use(self)
 
 
 class PhiNode(Instruction):

@@ -17,6 +17,9 @@ class EntryNode:
 
     def __str__(self) -> str:
         return "entry"
+    
+    def __repr__(self) -> str:
+        return f"EntryNode: {hex(id(self))}"
 
 
 class ExitNode:
@@ -28,6 +31,9 @@ class ExitNode:
 
     def __str__(self) -> str:
         return "exit"
+    
+    def __repr__(self) -> str:
+        return f"ExitNode: {hex(id(self))}"
 
 
 class CFGEdge(enum.Enum):
@@ -40,14 +46,14 @@ class CFG:
     def __init__(self, function: Function):
         self.function = function
         self.graph: nx.DiGraph = nx.DiGraph()
-        entry = EntryNode()
-        exit_ = ExitNode()
-        self.graph.add_node(entry)
-        self.graph.add_node(exit_)
+        self.entry = EntryNode()
+        self.exit_ = ExitNode()
+        self.graph.add_node(self.entry)
         for block in function.blocks:
             self.graph.add_node(block)
+        self.graph.add_node(self.exit_)
         self.graph.add_edge(
-            entry, function.blocks[0], edge_type=CFGEdge.UNCOND)
+            self.entry, function.blocks[0], edge_type=CFGEdge.UNCOND)
         for block in function.blocks:
             inst = block.terminator()
             match inst:
@@ -61,10 +67,25 @@ class CFG:
                         block, false, edge_type=CFGEdge.FALSE)
                 case ReturnInst(_):
                     self.graph.add_edge(
-                        block, exit_, edge_type=CFGEdge.UNCOND)
+                        block, self.exit_, edge_type=CFGEdge.UNCOND)
                 case _:
                     raise NotImplementedError(
                         f"Unknown terminator {inst} in CFG")
+
+    def successors_edges(self, node):
+        return self.graph.out_edges(node, data=True)
+
+    def successors(self, node):
+        return self.graph.successors(node)
+
+    def predecessors_edges(self, node):
+        return self.graph.in_edges(node, data=True)
+
+    def predecessors(self, node):
+        return self.graph.predecessors(node)
+
+    def blocks(self):
+        return self.graph.nodes[1:-1]
 
     def to_dot(self) -> str:
         dot = "digraph {\n"
