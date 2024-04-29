@@ -28,7 +28,7 @@ class Instruction(Value):
 
 
 class AllocaInst(Instruction):
-    __match_args__ = ('dest', 'type')
+    __match_args__ = ('type',)
 
     def __init__(self, type, dest, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -64,7 +64,7 @@ class StoreInst(Instruction):
 
 
 class LoadInst(Instruction):
-    __match_args__ = ('dest', 'ptr')
+    __match_args__ = ('ptr',)
 
     def __init__(self, type, dest, ptr: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -80,7 +80,7 @@ class LoadInst(Instruction):
 
 
 class GetElementPtrInst(Instruction):
-    __match_args__ = ('dest', 'ptr', 'indices')
+    __match_args__ = ('ptr', 'indices')
 
     def __init__(self, type, name, ptr: Value, indices: list[Value], parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -116,7 +116,7 @@ class IntPredicate(enum.Enum):
 
 
 class ICmpInst(Instruction):
-    __match_args__ = ('dest', 'predicate', 'lhs', 'rhs')
+    __match_args__ = ('predicate', 'lhs', 'rhs')
 
     def __init__(self, type, dest, predicate, lhs: Value, rhs: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -155,12 +155,12 @@ class ICmpInst(Instruction):
 
 
 class CallInst(Instruction):
-    __match_args__ = ('dest', 'function', 'args')
+    __match_args__ = ('callee', 'args')
 
-    def __init__(self, type, dest: str, function: str, args: list[Value], parent, debugloc=None):
+    def __init__(self, type, dest: str, callee: str, args: list[Value], parent, debugloc=None):
         super().__init__(type, parent, debugloc)
         self.dest = dest
-        self.function = function
+        self.callee = callee
         self.args = args
         # self.function.add_use(self)
         for arg in self.args:
@@ -172,8 +172,8 @@ class CallInst(Instruction):
     def __str__(self):
         args = ", ".join([arg.sname() for arg in self.args])
         if self.type == VoidType():
-            return f"call {self.function}({args})"
-        return f"{get_name_str(self.dest)} = call {self.type} {self.function}({args})"
+            return f"call {self.callee}({args})"
+        return f"{get_name_str(self.dest)} = call {self.type} {self.callee}({args})"
 
 
 class BinOp(enum.Enum):
@@ -200,7 +200,7 @@ class BinOp(enum.Enum):
 
 
 class BinaryOperator(Instruction):
-    __match_args__ = ('dest', 'op', 'lhs', 'rhs')
+    __match_args__ = ('op', 'lhs', 'rhs')
 
     def __init__(self, type, name, op: str, lhs: Value, rhs: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -242,7 +242,7 @@ class UnOp(enum.Enum):
 
 
 class UnaryOperator(Instruction):
-    __match_args__ = ('dest', 'op', 'value')
+    __match_args__ = ('op', 'value',)
 
     def __init__(self, type, name, op: str, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -256,7 +256,7 @@ class UnaryOperator(Instruction):
 
 
 class PhiNode(Instruction):
-    __match_args__ = ('dest', 'incoming_values')
+    __match_args__ = ('incoming_values')
 
     def __init__(self, type, name, incoming_values: list[Value, Value], parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -276,7 +276,7 @@ class PhiNode(Instruction):
 
 
 class SelectInst(Instruction):
-    __match_args__ = ('dest', 'condition', 'true', 'false')
+    __match_args__ = ('condition', 'true', 'false')
 
     def __init__(self, type, name, condition: Value, true: Value, false: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -296,7 +296,7 @@ class SelectInst(Instruction):
 
 
 class BitCastInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -312,7 +312,7 @@ class BitCastInst(Instruction):
 
 
 class SExtInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -328,7 +328,7 @@ class SExtInst(Instruction):
 
 
 class ZExtInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -344,7 +344,7 @@ class ZExtInst(Instruction):
 
 
 class FPExtInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -360,7 +360,7 @@ class FPExtInst(Instruction):
 
 
 class PtrToIntInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -376,7 +376,7 @@ class PtrToIntInst(Instruction):
 
 
 class IntToPtrInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -392,7 +392,7 @@ class IntToPtrInst(Instruction):
 
 
 class UIToFPInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -408,7 +408,7 @@ class UIToFPInst(Instruction):
 
 
 class SIToFPInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -424,7 +424,7 @@ class SIToFPInst(Instruction):
 
 
 class TruncInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -440,7 +440,7 @@ class TruncInst(Instruction):
 
 
 class FPTruncInst(Instruction):
-    __match_args__ = ('dest', 'value')
+    __match_args__ = ('value',)
 
     def __init__(self, type, name, value: Value, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
@@ -456,7 +456,7 @@ class FPTruncInst(Instruction):
 
 
 class InsertValueInst(Instruction):
-    __match_args__ = ('dest', 'value', 'index')
+    __match_args__ = ('value', 'index')
 
     def __init__(self, type, name, value: Value, index: list[int], parent, debugloc=None):
         super().__init__(type, parent, debugloc)

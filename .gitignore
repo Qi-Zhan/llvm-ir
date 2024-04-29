@@ -15,3 +15,6 @@ MANIFEST
 docs/_build/
 docs/gh-pages/
 .*.swp
+
+local_test
+.DS_Store
