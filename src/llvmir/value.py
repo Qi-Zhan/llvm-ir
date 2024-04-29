@@ -23,10 +23,12 @@ class Value:
         return self.type
 
     def has_name(self):
-        raise NotImplementedError(f"has_name is not implemented in {self.__class__.__name__}")
+        raise NotImplementedError(f"has_name is not implemented in {
+                                  self.__class__.__name__}")
 
     def get_name(self):
-        raise NotImplementedError(f"get_name is not implemented in {self.__class__.__name__}")
+        raise NotImplementedError(f"get_name is not implemented in {
+                                  self.__class__.__name__}")
 
     def sname(self):
         """ Get the simple name of the value, specifically when other value wants to print"""
@@ -40,31 +42,3 @@ class Value:
         if self.has_name():
             return f"<{self.__class__.__name__} name='{self.get_name()}' type='{self.type}'>"
         return f"<{self.__class__.__name__} type='{self.type}' ...>"
-
-
-class Constant(Value):  # TODO: make Const class more specific
-    __match_args__ = ('value',)
-
-    def __init__(self, type, value):
-        super().__init__(type)
-        self.value = value
-
-    def has_name(self):
-        return False
-
-    def sname(self):
-        return str(self)
-
-    def __str__(self):
-        return f"{self.type} {self.value}"
-
-
-class InlineAsm(Constant):
-    # __match_args__ = ('asm_str', 'constraints', 'side_effects',
-    #                   'type', 'has_side_effects', 'is_align_stack')
-
-    def __init__(self, type, asm_str):
-        super().__init__(type, asm_str)
-
-    def __str__(self):
-        return f"asm {self.asm_str}, {self.constraints}, {self.side_effects}, {self.has_side_effects}, {self.is_align_stack}"

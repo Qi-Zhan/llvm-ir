@@ -5,7 +5,8 @@ from .function import Function, Argument
 from .block import BasicBlock
 from .instruction import *
 from .typed import *
-from .value import Value, InlineAsm
+from .value import Value
+from .constant import *
 
 from .binding.module import ModuleRef, parse_bitcode, parse_assembly
 from .binding.typeref import TypeRef, TypeKind
@@ -384,7 +385,19 @@ class ModuleBuilder:
         assert constant.is_constant
         type = self.build_type(constant.type)
         value = constant.get_constant_value()
-        return Constant(type, value)
+        match constant.value_kind:
+            case ValueKind.constant_int:
+                return ConstantInt(type, value)
+            case ValueKind.constant_expr:
+                return Constant(type, value)
+            case ValueKind.function:
+                # TODO: it is strange that function is a constant
+                return Constant(type, value)
+            case ValueKind.constant_pointer_null:
+                return Null
+            case _:
+                print('build constant', constant)
+                breakpoint()
 
     @property
     def module(self):

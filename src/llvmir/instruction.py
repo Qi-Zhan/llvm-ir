@@ -6,7 +6,8 @@ import enum
 from typing import Optional
 
 from .typed import VoidType
-from .value import Value, Constant
+from .value import Value
+from .constant import Constant
 from .utils import get_name_str
 
 import llvmir.binding as llvm
