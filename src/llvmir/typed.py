@@ -1,6 +1,10 @@
 class Type:
     """https://llvm.org/doxygen/classllvm_1_1Type.html"""
 
+    def size(self) -> int:
+        assert False, f"You should implement in subclass {
+            self.__class__.__name__}"
+
     def __eq__(self, _other):
         assert False, f"You should implement in subclass {
             self.__class__.__name__}"
@@ -11,6 +15,9 @@ class Type:
 
 
 class LabelType(Type):
+
+    def size(self):
+        return 0
 
     def __str__(self):
         return "label"
@@ -29,6 +36,9 @@ class VoidType(Type):
     def __init__(self):
         self.width = 0
 
+    def size(self):
+        return 0
+
     def __str__(self):
         return "void"
 
@@ -43,11 +53,15 @@ VoidType = VoidType()  # Singleton
 
 
 class PointerType(Type):
-    __match_args__ = ('element_type')
+    __match_args__ = ('element_type',)
 
     def __init__(self, width, element_type: Type):
         self.width = width
         self.element_type = element_type
+
+    def size(self):
+        # TODO: assume 64-bit pointer
+        return 8
 
     def __str__(self):
         return f"{self.element_type}*"
@@ -62,6 +76,9 @@ class IntegerType(Type):
     def __init__(self, width: int):
         self.width = width
 
+    def size(self):
+        return self.width // 8
+
     def __str__(self):
         return f"i{self.width}"
 
@@ -74,6 +91,9 @@ class DoubleType(Type):
 
     def __init__(self, width):
         self.width = width
+
+    def size(self):
+        return self.width // 8
 
     def __str__(self):
         return "double"
@@ -88,6 +108,9 @@ class FloatType(Type):
     def __init__(self, width):
         self.width = width
 
+    def size(self):
+        return self.width // 8
+
     def __str__(self):
         return "float"
 
@@ -101,6 +124,9 @@ class ArrayType(Type):
     def __init__(self, element_count: int, element_type: Type):
         self.element_type = element_type
         self.element_count = element_count
+
+    def size(self):
+        return self.element_count * self.element_type.size()
 
     def __str__(self):
         return f"[{self.element_count} x {self.element_type}]"
@@ -125,6 +151,12 @@ class StructType(Type):
         self.name = name
         self.elements = []  # set elements later
         StructType.named_structs[name] = self
+
+    def size(self):
+        return sum(e.size() for e in self.elements)
+
+    def size_up_to(self, index):
+        return sum(e.size() for e in self.elements[:index])
 
     def __str__(self):
         return f"{self.name}"
