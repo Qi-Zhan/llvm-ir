@@ -53,21 +53,19 @@ VoidType = VoidType()  # Singleton
 
 
 class PointerType(Type):
-    __match_args__ = ('element_type',)
 
-    def __init__(self, width, element_type: Type):
+    def __init__(self, width):
         self.width = width
-        self.element_type = element_type
 
     def size(self):
         # TODO: assume 64-bit pointer
         return 8
 
     def __str__(self):
-        return f"{self.element_type}*"
+        return f"*"
 
     def __eq__(self, other):
-        return isinstance(other, PointerType) and self.element_type == other.element_type
+        return isinstance(other, PointerType)
 
 
 class IntegerType(Type):

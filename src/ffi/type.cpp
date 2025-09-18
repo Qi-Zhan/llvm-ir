@@ -101,6 +101,11 @@ LLVMPY_TypeIsStruct(LLVMTypeRef type) {
 }
 
 API_EXPORT(bool)
+LLVMPY_TypeIsFunction(LLVMTypeRef type) {
+    return llvm::unwrap(type)->isFunctionTy();
+}
+
+API_EXPORT(bool)
 LLVMPY_IsFunctionVararg(LLVMTypeRef type) {
     llvm::Type *unwrapped = llvm::unwrap(type);
     llvm::FunctionType *ty = llvm::dyn_cast<llvm::FunctionType>(unwrapped);
@@ -139,21 +144,27 @@ API_EXPORT(uint64_t)
 LLVMPY_GetTypeBitWidth(LLVMTypeRef type) {
     llvm::Type *unwrapped = llvm::unwrap(type);
     auto size = unwrapped->getPrimitiveSizeInBits();
-    return size.getFixedSize();
+    return size.getFixedValue();
 }
 
 API_EXPORT(LLVMTypeRef)
-LLVMPY_GetElementType(LLVMTypeRef type) {
-    llvm::Type *unwrapped = llvm::unwrap(type);
-    llvm::PointerType *ty = llvm::dyn_cast<llvm::PointerType>(unwrapped);
-    if (ty != nullptr) {
-#if LLVM_VERSION_MAJOR < 14
-        return llvm::wrap(ty->getElementType());
-#else
-        return llvm::wrap(ty->getPointerElementType());
-#endif
-    }
-    return nullptr;
+LLVMPY_GetReturnType(LLVMTypeRef type) { return LLVMGetReturnType(type); }
+
+API_EXPORT(unsigned)
+LLVMPY_CountParamTypes(LLVMTypeRef type) { return LLVMCountParamTypes(type); }
+
+API_EXPORT(void)
+LLVMPY_GetParamTypes(LLVMTypeRef type, LLVMTypeRef *out_types) {
+    LLVMGetParamTypes(type, out_types);
 }
+
+API_EXPORT(bool)
+LLVMPY_IsPackedStruct(LLVMTypeRef type) { return LLVMIsPackedStruct(type); }
+
+API_EXPORT(bool)
+LLVMPY_IsOpaqueStruct(LLVMTypeRef type) { return LLVMIsOpaqueStruct(type); }
+
+API_EXPORT(bool)
+LLVMPY_IsLiteralStruct(LLVMTypeRef type) { return LLVMIsLiteralStruct(type); }
 
 } // end extern "C"

@@ -40,6 +40,11 @@ LLVMObjectFileRef = _make_opaque_ref("LLVMObjectFile")
 LLVMSectionIteratorRef = _make_opaque_ref("LLVMSectionIterator")
 LLVMOrcLLJITRef = _make_opaque_ref("LLVMOrcLLJITRef")
 LLVMOrcDylibTrackerRef = _make_opaque_ref("LLVMOrcDylibTrackerRef")
+LLVMTimePassesHandlerRef = _make_opaque_ref("LLVMTimePassesHandler")
+LLVMPipelineTuningOptionsRef = _make_opaque_ref("LLVMPipeLineTuningOptions")
+LLVMModulePassManagerRef = _make_opaque_ref("LLVMModulePassManager")
+LLVMFunctionPassManagerRef = _make_opaque_ref("LLVMFunctionPassManager")
+LLVMPassBuilderRef = _make_opaque_ref("LLVMPassBuilder")
 
 
 class _LLVMLock:
@@ -97,7 +102,7 @@ class _suppress_cleanup_errors:
 
 
 class _lib_wrapper(object):
-    """Wrap libllvmlite with a lock such that only one thread may access it at
+    """Wrap libllvmir with a lock such that only one thread may access it at
     a time.
 
     This class duck-types a CDLL.
@@ -207,7 +212,7 @@ def _importlib_resources_path_repl(package, resource):
 
 
 _importlib_resources_path = (_importlib_resources_path_repl
-                             if sys.version_info[:2] >= (3, 9)
+                             if sys.version_info[:2] >= (3, 10)
                              else _impres.path)
 
 

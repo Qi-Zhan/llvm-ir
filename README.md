@@ -21,7 +21,7 @@ Our project bases on the `llvmlite` project, mainly its `binding` and `ffi` modu
 
 llvmlite require at least Python 3.12 and is likely to work with greater versions.
 
-Currently, we build LLVM bindings only for 14.x.x.
+Currently, we build LLVM bindings only for 20.x.x.
 
 ## Development
 
@@ -38,13 +38,7 @@ After
 
 Then install the package in development mode:
 
-    $ make install
-
-### Test
-
-We use `unittest` for testing.
-You can run the tests with:
-
-    $ make test
+    $ python src/ffi/build.py
+    $ pip install -e .
 
 ## Example

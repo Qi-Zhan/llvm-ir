@@ -1,5 +1,4 @@
 #include "llvm-c/Core.h"
-#include "llvm-c/Initialization.h"
 #include "llvm-c/Target.h"
 
 #include "core.h"
@@ -7,25 +6,8 @@
 
 extern "C" {
 
-#define INIT(F)                                                                \
-    API_EXPORT(void) LLVMPY_Initialize##F() {                                  \
-        LLVMInitialize##F(LLVMGetGlobalPassRegistry());                        \
-    }
-
-INIT(Core)
-INIT(TransformUtils)
-INIT(ScalarOpts)
-INIT(ObjCARCOpts)
-INIT(Vectorization)
-INIT(InstCombine)
-INIT(IPO)
-// INIT(Instrumentation)
-INIT(Analysis)
-INIT(IPA)
-INIT(CodeGen)
-INIT(Target)
-
-#undef INIT
+// Pass registry and initialization APIs support dropped
+// https://reviews.llvm.org/D145043
 
 API_EXPORT(void)
 LLVMPY_Shutdown() { LLVMShutdown(); }

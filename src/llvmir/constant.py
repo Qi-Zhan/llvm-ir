@@ -57,3 +57,19 @@ class InlineAsm(Constant):
 
     def __str__(self):
         return f"asm {self.asm_str}, {self.constraints}, {self.side_effects}, {self.has_side_effects}, {self.is_align_stack}"
+
+
+class GlobalValue(Constant):
+    __match_args__ = ('name', 'type')
+
+    def __init__(self, name, type):
+        super().__init__(type, name)
+        self.name = name
+
+    def __str__(self):
+        return f"@{self.name}"
+
+    def __eq__(self, value) -> bool:
+        if not isinstance(value, GlobalValue):
+            return False
+        return self.name == value.name

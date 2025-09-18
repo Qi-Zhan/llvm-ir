@@ -253,6 +253,17 @@ class ValueRef(ffi.ObjectRef):
         return TypeRef(ffi.lib.LLVMPY_TypeOf(self))
 
     @property
+    def global_value_type(self):
+        """
+        Uses ``LLVMGlobalGetValueType()``.
+        Needed for opaque pointers in globals.
+        > For globals, use getValueType().
+        See https://llvm.org/docs/OpaquePointers.html#migration-instructions
+        """
+        assert self.is_global or self.is_function
+        return TypeRef(ffi.lib.LLVMPY_GlobalGetValueType(self))
+
+    @property
     def is_declaration(self):
         """
         Whether this value (presumably global) is defined in the current
@@ -261,7 +272,7 @@ class ValueRef(ffi.ObjectRef):
         if not (self.is_global or self.is_function):
             raise ValueError('expected global or function value, got %s'
                              % (self._kind,))
-        return ffi.lib.LLVMPY_IsDeclaration(self) != 0
+        return ffi.lib.LLVMPY_IsDeclaration(self)
 
     @property
     def attributes(self):
@@ -563,6 +574,9 @@ ffi.lib.LLVMPY_SetValueName.argtypes = [ffi.LLVMValueRef, c_char_p]
 ffi.lib.LLVMPY_TypeOf.argtypes = [ffi.LLVMValueRef]
 ffi.lib.LLVMPY_TypeOf.restype = ffi.LLVMTypeRef
 
+ffi.lib.LLVMPY_GlobalGetValueType.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GlobalGetValueType.restype = ffi.LLVMTypeRef
+
 ffi.lib.LLVMPY_GetTypeName.argtypes = [ffi.LLVMTypeRef]
 ffi.lib.LLVMPY_GetTypeName.restype = c_void_p
 
@@ -622,13 +636,11 @@ ffi.lib.LLVMPY_PhiIncomingBlocksIter.restype = ffi.LLVMIncomingBlocksIterator
 ffi.lib.LLVMPY_DisposeAttributeListIter.argtypes = [
     ffi.LLVMAttributeListIterator]
 
-ffi.lib.LLVMPY_DisposeAttributeSetIter.argtypes = [
-    ffi.LLVMAttributeSetIterator]
+ffi.lib.LLVMPY_DisposeAttributeSetIter.argtypes = [ffi.LLVMAttributeSetIterator]
 
 ffi.lib.LLVMPY_DisposeBlocksIter.argtypes = [ffi.LLVMBlocksIterator]
 
-ffi.lib.LLVMPY_DisposeInstructionsIter.argtypes = [
-    ffi.LLVMInstructionsIterator]
+ffi.lib.LLVMPY_DisposeInstructionsIter.argtypes = [ffi.LLVMInstructionsIterator]
 
 ffi.lib.LLVMPY_DisposeOperandsIter.argtypes = [ffi.LLVMOperandsIterator]
 

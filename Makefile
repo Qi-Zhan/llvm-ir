@@ -1,13 +1,7 @@
-.PHONY: install test clean build
+.PHONY: install clean
 
 install: 
 	pip install -e .
-
-build:
-	python -m build
-
-test:
-	python -m unittest
 
 clean:
 	rm -rf __pycache__

@@ -1,13 +1,13 @@
 #include "core.h"
 #include "llvm-c/Target.h"
 #include "llvm-c/TargetMachine.h"
-#include "llvm/ADT/Triple.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Type.h"
 #include "llvm/MC/TargetRegistry.h"
-#include "llvm/Support/Host.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/TargetParser/Host.h"
+#include "llvm/TargetParser/Triple.h"
 
 #include <cstdio>
 #include <cstring>
@@ -34,6 +34,24 @@ LLVMPY_GetProcessTriple(const char **Out) {
     *Out = LLVMPY_CreateString(llvm::sys::getProcessTriple().c_str());
 }
 
+API_EXPORT(void)
+LLVMPY_GetTripleParts(const char *triple_str, const char **arch_out,
+                      const char **vendor_out, const char **os_out,
+                      const char **environment_out) {
+    // Normalize the triple string
+    auto triple_str_norm = llvm::Triple::normalize(triple_str);
+    auto triple = llvm::Triple(triple_str_norm);
+
+    *arch_out = LLVMPY_CreateString(
+        llvm::Triple::getArchTypeName(triple.getArch()).data());
+    *vendor_out = LLVMPY_CreateString(
+        llvm::Triple::getVendorTypeName(triple.getVendor()).data());
+    *os_out =
+        LLVMPY_CreateString(llvm::Triple::getOSTypeName(triple.getOS()).data());
+    *environment_out = LLVMPY_CreateString(
+        llvm::Triple::getEnvironmentTypeName(triple.getEnvironment()).data());
+}
+
 /**
  * Output the feature string to the output argument.
  * Features are prefixed with '+' or '-' for enabled or disabled, respectively.
@@ -41,9 +59,10 @@ LLVMPY_GetProcessTriple(const char **Out) {
  */
 API_EXPORT(int)
 LLVMPY_GetHostCPUFeatures(const char **Out) {
-    llvm::StringMap<bool> features;
+    // https://github.com/llvm/llvm-project/pull/97824
+    llvm::StringMap<bool> features = llvm::sys::getHostCPUFeatures();
     std::ostringstream buf;
-    if (llvm::sys::getHostCPUFeatures(features)) {
+    if (!features.empty()) {
         for (auto &F : features) {
             if (buf.tellp()) {
                 buf << ',';
@@ -98,21 +117,8 @@ LLVMPY_OffsetOfElement(LLVMTargetDataRef TD, LLVMTypeRef Ty, int Element) {
 }
 
 API_EXPORT(long long)
-LLVMPY_ABISizeOfElementType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    llvm::Type *tp = llvm::unwrap(Ty);
-    if (!tp->isPointerTy())
-        return -1;
-    tp = tp->getPointerElementType();
-    return (long long)LLVMABISizeOfType(TD, llvm::wrap(tp));
-}
-
-API_EXPORT(long long)
-LLVMPY_ABIAlignmentOfElementType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
-    llvm::Type *tp = llvm::unwrap(Ty);
-    if (!tp->isPointerTy())
-        return -1;
-    tp = tp->getPointerElementType();
-    return (long long)LLVMABIAlignmentOfType(TD, llvm::wrap(tp));
+LLVMPY_ABIAlignmentOfType(LLVMTargetDataRef TD, LLVMTypeRef Ty) {
+    return (long long)LLVMABIAlignmentOfType(TD, Ty);
 }
 
 API_EXPORT(LLVMTargetRef)
@@ -141,20 +147,22 @@ LLVMPY_CreateTargetMachine(LLVMTargetRef T, const char *Triple, const char *CPU,
                            const char *RelocModel, const char *CodeModel,
                            int PrintMC, int JIT, const char *ABIName) {
     using namespace llvm;
-    CodeGenOpt::Level cgol;
+
+    // https://github.com/llvm/llvm-project/pull/66295
+    CodeGenOptLevel cgol;
     switch (OptLevel) {
     case 0:
-        cgol = CodeGenOpt::None;
+        cgol = CodeGenOptLevel::None;
         break;
     case 1:
-        cgol = CodeGenOpt::Less;
+        cgol = CodeGenOptLevel::Less;
         break;
     case 3:
-        cgol = CodeGenOpt::Aggressive;
+        cgol = CodeGenOptLevel::Aggressive;
         break;
     case 2:
     default:
-        cgol = CodeGenOpt::Default;
+        cgol = CodeGenOptLevel::Default;
     }
 
     CodeModel::Model cm;
@@ -178,7 +186,8 @@ LLVMPY_CreateTargetMachine(LLVMTargetRef T, const char *Triple, const char *CPU,
             cm = CodeModel::Large;
     }
 
-    Optional<Reloc::Model> rm;
+    // llvm::Optional removed in llvm17
+    std::optional<Reloc::Model> rm;
     std::string rms(RelocModel);
     if (rms == "static")
         rm = Reloc::Static;
@@ -253,15 +262,6 @@ LLVMPY_GetBufferSize(LLVMMemoryBufferRef MB) { return LLVMGetBufferSize(MB); }
 API_EXPORT(void)
 LLVMPY_DisposeMemoryBuffer(LLVMMemoryBufferRef MB) {
     return LLVMDisposeMemoryBuffer(MB);
-}
-
-API_EXPORT(int)
-LLVMPY_HasSVMLSupport(void) {
-#ifdef HAVE_SVML
-    return 1;
-#else
-    return 0;
-#endif
 }
 
 API_EXPORT(void)

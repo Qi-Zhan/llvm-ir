@@ -7,8 +7,7 @@ def get_name_str(x):
         return f"%{x}"
     elif isinstance(x, str):
         return x
-    else:
-        assert False, f"Unknown type {type(x)}"
+    assert False, f"Unknown type {type(x)}"
 
 
 def get_library_name():

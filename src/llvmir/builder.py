@@ -10,11 +10,10 @@ from .constant import *
 
 from .binding.module import ModuleRef, parse_bitcode, parse_assembly
 from .binding.typeref import TypeRef, TypeKind
-from .binding.passmanagers import create_module_pass_manager
 from .binding.value import ValueKind
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 def needs_name(ffi_obj):
@@ -97,12 +96,12 @@ class ModuleBuilder:
         Module, python data structure
         """
         transformer = ModuleBuilder()
-        pm = create_module_pass_manager()
-        if run_mem2reg:
-            pm.add_memcpy_optimization_pass()
-        if run_instnamer:
-            pm.add_instruction_namer_pass()
-        pm.run(ffi_module)
+        # pm = create_module_pass_manager()
+        # if run_mem2reg:
+        #     pm.add_memcpy_optimization_pass()
+        # if run_instnamer:
+        #     pm.add_instruction_namer_pass()
+        # pm.run(ffi_module)
         return transformer.build_mod(ffi_module)
 
     @staticmethod
@@ -324,7 +323,7 @@ class ModuleBuilder:
             case TypeKind.void:
                 return VoidType()
             case TypeKind.pointer:
-                return PointerType(type.type_width, self.build_type(type.element_type))
+                return PointerType(type.type_width)
             case TypeKind.integer:
                 return IntegerType(type.type_width)
             case TypeKind.array:
@@ -383,18 +382,19 @@ class ModuleBuilder:
 
     def build_constant(self, constant) -> Constant:
         assert constant.is_constant
-        type = self.build_type(constant.type)
+        type_ = self.build_type(constant.type)
         value = constant.get_constant_value()
         match constant.value_kind:
             case ValueKind.constant_int:
-                return ConstantInt(type, value)
+                return ConstantInt(type_, value)
             case ValueKind.constant_expr:
-                return Constant(type, value)
+                return Constant(type_, value)
             case ValueKind.function:
-                # TODO: it is strange that function is a constant
-                return Constant(type, value)
+                return Constant(type_, value)
             case ValueKind.constant_pointer_null:
                 return Null
+            case ValueKind.global_variable:
+                return GlobalValue(type_, value)
             case _:
                 print('build constant', constant)
                 breakpoint()
