@@ -484,4 +484,10 @@ LLVMPY_GetFCmpPredicate(LLVMValueRef Val) { return LLVMGetFCmpPredicate(Val); }
 API_EXPORT(LLVMValueRef)
 LLVMPY_GetCalledValue(LLVMValueRef Val) { return LLVMGetCalledValue(Val); }
 
+// Return a stable numeric address for a ValueRef
+API_EXPORT(uintptr_t)
+LLVMPY_GetValueAddress(LLVMValueRef Val) {
+    return reinterpret_cast<uintptr_t>(Val);
+}
+
 } // end extern "C"

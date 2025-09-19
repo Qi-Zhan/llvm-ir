@@ -386,6 +386,12 @@ class ValueRef(ffi.ObjectRef):
         else:
             return ffi.lib.LLVMPY_GetFCmpPredicate(self)
 
+    def address(self):
+        """
+        Return the address of this value.
+        """
+        return ffi.lib.LLVMPY_GetValueAddress(self)
+
     @property
     def called_value(self):
         """
@@ -697,3 +703,6 @@ ffi.lib.LLVMPY_GetFCmpPredicate.restype = c_int
 
 ffi.lib.LLVMPY_GetCalledValue.argtypes = [ffi.LLVMValueRef]
 ffi.lib.LLVMPY_GetCalledValue.restype = ffi.LLVMValueRef
+
+ffi.lib.LLVMPY_GetValueAddress.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GetValueAddress.restype = c_uint64
