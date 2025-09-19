@@ -324,6 +324,14 @@ class ValueRef(ffi.ObjectRef):
         parents = self._parents.copy()
         parents.update(function=self)
         return _ArgumentsIterator(it, parents)
+    
+    def return_type(self):
+        """
+        Return the return type of this function.
+        """
+        if not self.is_function:
+            raise ValueError('expected function value, got %s' % (self._kind,))
+        return TypeRef(ffi.lib.LLVMPY_GetFunctionReturnType(self))
 
     @property
     def instructions(self):
@@ -706,3 +714,6 @@ ffi.lib.LLVMPY_GetCalledValue.restype = ffi.LLVMValueRef
 
 ffi.lib.LLVMPY_GetValueAddress.argtypes = [ffi.LLVMValueRef]
 ffi.lib.LLVMPY_GetValueAddress.restype = c_uint64
+
+ffi.lib.LLVMPY_GetFunctionReturnType.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GetFunctionReturnType.restype = ffi.LLVMTypeRef

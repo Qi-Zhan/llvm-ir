@@ -484,7 +484,12 @@ LLVMPY_GetFCmpPredicate(LLVMValueRef Val) { return LLVMGetFCmpPredicate(Val); }
 API_EXPORT(LLVMValueRef)
 LLVMPY_GetCalledValue(LLVMValueRef Val) { return LLVMGetCalledValue(Val); }
 
-// Return a stable numeric address for a ValueRef
+API_EXPORT(LLVMTypeRef)
+LLVMPY_GetFunctionReturnType(LLVMValueRef fn) {
+    auto *F = llvm::cast<llvm::Function>(llvm::unwrap(fn));
+    return wrap(F->getReturnType());
+}
+
 API_EXPORT(uintptr_t)
 LLVMPY_GetValueAddress(LLVMValueRef Val) {
     return reinterpret_cast<uintptr_t>(Val);

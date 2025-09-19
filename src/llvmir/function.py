@@ -3,6 +3,7 @@ Implementation of LLVM IR function
 """
 
 from .value import Value
+from .utils import indent, get_name_str
 
 
 class Function(Value):
@@ -13,6 +14,13 @@ class Function(Value):
         self.arguments = []
         self.return_type = None
         self.parent = parent
+
+    def __str__(self):
+        args_str = ", ".join([str(arg) for arg in self.arguments])
+        blocks_str = "\n".join([indent(str(block)) for block in self.blocks])
+        return (
+            f"define {self.return_type} @{self.name}({args_str}) {{\n{blocks_str}\n}}"
+        )
 
 
 class Argument(Value):
@@ -27,4 +35,4 @@ class Argument(Value):
         return self.name
 
     def __str__(self):
-        return f"{self.type} {self.name}"
+        return f"{self.type} {get_name_str(self.name)}"

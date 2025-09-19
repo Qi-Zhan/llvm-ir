@@ -12,9 +12,6 @@ from .binding.module import ModuleRef, parse_bitcode, parse_assembly
 from .binding.typeref import TypeRef, TypeKind
 from .binding.value import ValueKind
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
 
 class Context:
     def __init__(self):
@@ -105,8 +102,7 @@ class ModuleBuilder:
         self.context = Context()
         arguments = [self.build_argument(arg) for arg in ffi_func.arguments]
         function.arguments = arguments
-        logger.debug(f"function {function.name}")
-        logger.debug(f"arguments {arguments}")
+        function.return_type = self.build_type(ffi_func.return_type())
         self.function = function
         # scan all basic blocks first
         basic_blocks = []

@@ -36,4 +36,4 @@ class BasicBlock(Value):
 
     def __str__(self):
         instructions = "\n".join([f"  {instr}" for instr in self.instructions])
-        return f"%{self.name}\n{instructions}"
+        return f"%{self.name}:\n{instructions}"
