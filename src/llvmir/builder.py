@@ -1,5 +1,3 @@
-import logging
-
 from .module import Module
 from .function import Function, Argument
 from .block import BasicBlock
@@ -57,14 +55,6 @@ class ModuleBuilder:
 
     @staticmethod
     def _from_ffi_module(ffi_module: ModuleRef) -> Module:
-        """Translate ModuleRef to Module
-
-        Parameters:
-        mod: ModuleRef, ffi object
-
-        Returns:
-        Module, python data structure
-        """
         transformer = ModuleBuilder()
         return transformer.build_module(ffi_module)
 
@@ -77,6 +67,7 @@ class ModuleBuilder:
         return mod
 
     def build_module(self, ffi_mod) -> Module:
+        self.context = Context()
         source_file = ffi_mod.source_file
         name = ffi_mod.name
         triple = ffi_mod.triple
@@ -88,6 +79,7 @@ class ModuleBuilder:
         for ffi_func in ffi_mod.functions:
             assert ffi_func.is_function
             function = Function(ffi_func.name, self.module)
+            self.context.save_value(ffi_func, function)
             if ffi_func.is_declaration:
                 module.declarations[function.name] = function
             else:
@@ -99,7 +91,6 @@ class ModuleBuilder:
         return module
 
     def build_function(self, function: Function, ffi_func) -> Function:
-        self.context = Context()
         arguments = [self.build_argument(arg) for arg in ffi_func.arguments]
         function.arguments = arguments
         function.return_type = self.build_type(ffi_func.return_type())
@@ -125,7 +116,6 @@ class ModuleBuilder:
         self.basic_block = bb
         for ffi_instr in ffi_bb.instructions:
             instruction = self.build_instruction(ffi_instr)
-            # logger.debug(f"get instruction {instruction}")
             self.context.save_value(ffi_instr, instruction)
             bb.instructions.append(instruction)
         return bb
@@ -136,7 +126,8 @@ class ModuleBuilder:
         match instr.opcode:
             case "alloca":
                 type = self.build_type(instr.type)
-                return AllocaInst(type, name, self.basic_block)
+                allocate_type = self.build_type(instr.allocated_type())
+                return AllocaInst(type, allocate_type, name, self.basic_block)
             case "store":
                 operands = [self.build_operand(operand) for operand in instr.operands]
                 assert len(operands) == 2
@@ -160,6 +151,7 @@ class ModuleBuilder:
                     return ReturnInst(operands[0], self.basic_block)
             case "call":
                 type = self.build_type(instr.type)
+                called_value = self.context.get_value(instr.called_value)
                 if type != VoidType():
                     operands = [
                         self.build_operand(operand) for operand in instr.operands
@@ -167,7 +159,7 @@ class ModuleBuilder:
                     return CallInst(
                         type,
                         name,
-                        instr.called_value.name,
+                        called_value,
                         operands[:-1],
                         self.basic_block,
                     )
@@ -178,7 +170,7 @@ class ModuleBuilder:
                     return CallInst(
                         type,
                         name,
-                        instr.called_value.name,
+                        called_value,
                         operands[:-1],
                         self.basic_block,
                     )

@@ -495,4 +495,10 @@ LLVMPY_GetValueAddress(LLVMValueRef Val) {
     return reinterpret_cast<uintptr_t>(Val);
 }
 
+API_EXPORT(LLVMTypeRef)
+LLVMPY_GetAllocatedType(LLVMValueRef instr) {
+    auto *AI = llvm::cast<llvm::AllocaInst>(llvm::unwrap(instr));
+    return llvm::wrap(AI->getAllocatedType());
+}
+
 } // end extern "C"

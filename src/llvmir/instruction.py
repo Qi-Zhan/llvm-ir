@@ -32,14 +32,15 @@ class Instruction(Value):
 
 
 class AllocaInst(Instruction):
-    __match_args__ = ("type",)
+    __match_args__ = ("alloca_type",)
 
-    def __init__(self, type, name, parent, debugloc=None):
+    def __init__(self, type, alloca_type, name, parent, debugloc=None):
         super().__init__(type, parent, debugloc)
         self.name = name
+        self.alloca_type = alloca_type
 
     def __str__(self):
-        return f"{get_name_str(self.name)} = alloca {self.type}"
+        return f"{get_name_str(self.name)} = alloca {self.alloca_type}"
 
 
 class StoreInst(Instruction):
@@ -61,7 +62,7 @@ class StoreInst(Instruction):
                 value = c
             case _:
                 value = f"%{self.value.get_name()}"
-        return f"store {value}, {get_name_str(self.address.sname())}"
+        return f"store {self.value.type} {value}, {get_name_str(self.address.sname())}"
 
 
 class LoadInst(Instruction):
@@ -74,7 +75,7 @@ class LoadInst(Instruction):
         self.ptr.add_use(self)
 
     def __str__(self):
-        return f"{get_name_str(self.name)} = load {get_name_str(self.ptr.sname())}"
+        return f"{get_name_str(self.name)} = load {self.type} {get_name_str(self.ptr.sname())}"
 
 
 class GetElementPtrInst(Instruction):
@@ -168,7 +169,7 @@ class CallInst(Instruction):
         args = ", ".join([arg.sname() for arg in self.args])
         if self.type == VoidType():
             return f"call {self.callee}({args})"
-        return f"{get_name_str(self.name)} = call {self.type} {self.callee}({args})"
+        return f"{get_name_str(self.name)} = call {self.type} {self.callee.get_name()}({args})"
 
 
 class BinOp(enum.Enum):
@@ -492,7 +493,7 @@ class ReturnInst(Terminator):
     def __str__(self):
         if self.value is None:
             return "ret void"
-        return f"ret {self.value.sname()}"
+        return f"ret {self.value.type} {self.value.sname()}"
 
 
 class BranchInst(Terminator):

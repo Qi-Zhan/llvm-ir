@@ -32,13 +32,9 @@ On MacOS, you can install them with:
 
     $ brew install llvm
   
-After
-
-    $ export LLVM_CONFIG=/usr/local/opt/llvm/bin/llvm-config
-
 Then install the package in development mode:
 
-    $ python src/ffi/build.py
+    $ LLVM_DIR=/opt/homebrew/Cellar/llvm@20/20.1.8/lib/cmake/llvm python src/ffi/build.py
     $ pip install -e .
 
 ## Example

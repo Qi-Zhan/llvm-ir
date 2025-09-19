@@ -4,6 +4,7 @@ Implementation of LLVM IR function
 
 from .value import Value
 from .utils import indent, get_name_str
+from .typed import FunctionType
 
 
 class Function(Value):
@@ -14,6 +15,17 @@ class Function(Value):
         self.arguments = []
         self.return_type = None
         self.parent = parent
+        super().__init__(None)
+
+    @property
+    def type(self):
+        return FunctionType(self.return_type, [arg.type for arg in self.arguments])
+
+    def has_name(self):
+        return True
+
+    def get_name(self):
+        return self.name
 
     def __str__(self):
         args_str = ", ".join([str(arg) for arg in self.arguments])

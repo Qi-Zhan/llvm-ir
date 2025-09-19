@@ -7,20 +7,26 @@ class Value:
     """
 
     def __init__(self, type):
-        self.type = type
-        self.uses = []
+        self._type = type
+        self._uses = []
 
-    def get_use_list(self):
-        return self.uses
-
-    def get_use(self, idx):
-        return self.uses[idx]
+    @property
+    def uses(self):
+        return self._uses
 
     def add_use(self, use):
-        self.uses.append(use)
+        self._uses.append(use)
 
-    def get_type(self):
-        return self.type
+    def get_use(self, idx):
+        return self._uses[idx]
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        self._type = value
 
     def has_name(self):
         raise NotImplementedError(f"has_name is not implemented in {

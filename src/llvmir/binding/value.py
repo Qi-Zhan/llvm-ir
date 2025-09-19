@@ -399,6 +399,15 @@ class ValueRef(ffi.ObjectRef):
         Return the address of this value.
         """
         return ffi.lib.LLVMPY_GetValueAddress(self)
+    
+    def allocated_type(self):
+        """
+        Return the allocated type of this alloca instruction.
+        """
+        if not self.is_instruction or self.opcode != 'alloca':
+            raise ValueError('expected alloca instruction value, got %s'
+                             % (self._kind,))
+        return TypeRef(ffi.lib.LLVMPY_GetAllocatedType(self))
 
     @property
     def called_value(self):
@@ -717,3 +726,6 @@ ffi.lib.LLVMPY_GetValueAddress.restype = c_uint64
 
 ffi.lib.LLVMPY_GetFunctionReturnType.argtypes = [ffi.LLVMValueRef]
 ffi.lib.LLVMPY_GetFunctionReturnType.restype = ffi.LLVMTypeRef
+
+ffi.lib.LLVMPY_GetAllocatedType.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GetAllocatedType.restype = ffi.LLVMTypeRef
