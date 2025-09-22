@@ -47,6 +47,15 @@ class Null(Constant):
 
 Null = Null()  # Singleton
 
+class Undef(Constant):
+    def __init__(self, type):
+        super().__init__(type, 'undef')
+
+    def __str__(self):
+        return f"{self.type} undef"
+
+    def __eq__(self, value) -> bool:
+        return id(self) == id(value)
 
 class InlineAsm(Constant):
     # __match_args__ = ('asm_str', 'constraints', 'side_effects',
@@ -62,12 +71,16 @@ class InlineAsm(Constant):
 class GlobalValue(Constant):
     __match_args__ = ('name', 'type')
 
-    def __init__(self, name, type):
+    def __init__(self, name, type, initializer=None):
         super().__init__(type, name)
         self.name = name
+        self.initializer = initializer
 
     def __str__(self):
-        return f"@{self.name}"
+        if self.initializer:
+            return f"@{self.name} = {self.type} {self.initializer}"
+        else:
+            return f"@{self.name}"
 
     def __eq__(self, value) -> bool:
         if not isinstance(value, GlobalValue):

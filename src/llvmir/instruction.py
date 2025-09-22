@@ -21,8 +21,20 @@ class Instruction(Value):
         self.debugloc = debugloc
 
     def has_name(self):
-        """default implementation"""
         return True
+
+    def replace_use_with(self, old_value, new_value):
+        # TODO: optimize
+        for field in getattr(self, "__match_args__", []):
+            val = getattr(self, field)
+            if val is old_value:
+                setattr(self, field, new_value)
+                new_value.add_use(self)
+            elif isinstance(val, list):
+                for i, v in enumerate(val):
+                    if v is old_value:
+                        val[i] = new_value
+                        new_value.add_use(self)
 
     def get_name(self):
         return self.name
@@ -151,6 +163,78 @@ class ICmpInst(Instruction):
         return f"{get_name_str(self.name)} = icmp {self.predicate} {self.lhs.sname()}, {self.rhs.sname()}"
 
 
+class RealPredicate(enum.Enum):
+    FALSE = "false"
+    OEQ = "oeq"
+    OGT = "ogt"
+    OGE = "oge"
+    OLT = "olt"
+    OLE = "ole"
+    ONE = "one"
+    ORD = "ord"
+    UNO = "uno"
+    UEQ = "ueq"
+    UGT = "ugt"
+    UGE = "uge"
+    ULT = "ult"
+    ULE = "ule"
+    UNE = "une"
+    TRUE = "true"
+
+    def __str__(self):
+        return self.value
+
+
+class FCmpInst(Instruction):
+    __match_args__ = ("predicate", "lhs", "rhs")
+
+    def __init__(
+        self, type, name, predicate, lhs: Value, rhs: Value, parent, debugloc=None
+    ):
+        super().__init__(type, parent, debugloc)
+        self.name = name
+        match predicate:
+            case llvm.value.RealPredicate.false:
+                self.predicate = RealPredicate.FALSE
+            case llvm.value.RealPredicate.oeq:
+                self.predicate = RealPredicate.OEQ
+            case llvm.value.RealPredicate.ogt:
+                self.predicate = RealPredicate.OGT
+            case llvm.value.RealPredicate.oge:
+                self.predicate = RealPredicate.OGE
+            case llvm.value.RealPredicate.olt:
+                self.predicate = RealPredicate.OLT
+            case llvm.value.RealPredicate.ole:
+                self.predicate = RealPredicate.OLE
+            case llvm.value.RealPredicate.one:
+                self.predicate = RealPredicate.ONE
+            case llvm.value.RealPredicate.ord:
+                self.predicate = RealPredicate.ORD
+            case llvm.value.RealPredicate.uno:
+                self.predicate = RealPredicate.UNO
+            case llvm.value.RealPredicate.ueq:
+                self.predicate = RealPredicate.UEQ
+            case llvm.value.RealPredicate.ugt:
+                self.predicate = RealPredicate.UGT
+            case llvm.value.RealPredicate.uge:
+                self.predicate = RealPredicate.UGE
+            case llvm.value.RealPredicate.ult:
+                self.predicate = RealPredicate.ULT
+            case llvm.value.RealPredicate.ule:
+                self.predicate = RealPredicate.ULE
+            case llvm.value.RealPredicate.une:
+                self.predicate = RealPredicate.UNE
+            case llvm.value.RealPredicate.true:
+                self.predicate = RealPredicate.TRUE
+        self.lhs = lhs
+        self.rhs = rhs
+        self.lhs.add_use(self)
+        self.rhs.add_use(self)
+
+    def __str__(self):
+        return f"{get_name_str(self.name)} = fcmp {self.predicate} {self.lhs.sname()}, {self.rhs.sname()}"
+
+
 class CallInst(Instruction):
     __match_args__ = ("callee", "args")
 
@@ -167,9 +251,40 @@ class CallInst(Instruction):
 
     def __str__(self):
         args = ", ".join([arg.sname() for arg in self.args])
-        if self.type == VoidType():
-            return f"call {self.callee}({args})"
         return f"{get_name_str(self.name)} = call {self.type} {self.callee.get_name()}({args})"
+
+
+class InvokeInst(Instruction):
+    __match_args__ = ("callee", "args", "normal_dest", "unwind_dest")
+
+    def __init__(
+        self,
+        type,
+        name: str,
+        callee: Value,
+        args: list[Value],
+        normal_dest: Value,
+        unwind_dest: Value,
+        parent,
+        debugloc=None,
+    ):
+        super().__init__(type, parent, debugloc)
+        self.name = name
+        self.callee = callee
+        self.args = args
+        self.normal_dest = normal_dest
+        self.unwind_dest = unwind_dest
+        self.callee.add_use(self)
+        for arg in self.args:
+            arg.add_use(self)
+        self.normal_dest.add_use(self)
+        self.unwind_dest.add_use(self)
+
+    def __str__(self):
+        args = ", ".join([arg.sname() for arg in self.args])
+        if self.type == VoidType():
+            return f"invoke {self.callee}({args}) to label {self.normal_dest.sname()} unwind label {self.unwind_dest.sname()}"
+        return f"{get_name_str(self.name)} = invoke {self.type} {self.callee.get_name()}({args}) to label {self.normal_dest.sname()} unwind label {self.unwind_dest.sname()}"
 
 
 class BinOp(enum.Enum):
@@ -275,7 +390,7 @@ class UnaryOperator(Instruction):
 
 
 class PhiNode(Instruction):
-    __match_args__ = "incoming_values"
+    __match_args__ = ("incoming_values",)
 
     def __init__(
         self, type, name, incoming_values: list[Value, Value], parent, debugloc=None
@@ -283,9 +398,11 @@ class PhiNode(Instruction):
         super().__init__(type, parent, debugloc)
         self.name = name
         self.incoming_values = incoming_values
-        for value, block in self.incoming_values:
-            value.add_use(self)
-            block.add_use(self)
+
+    def add_incoming(self, value: Value, block: Value):
+        self.incoming_values.append((value, block))
+        value.add_use(self)
+        block.add_use(self)
 
     def __str__(self):
         incoming_values = ", ".join(
@@ -470,6 +587,17 @@ class InsertValueInst(Instruction):
 
     def __str__(self):
         return f"{get_name_str(self.name)} = insertvalue {self.value.type} {self.value.sname()}, {self.type} undef, {self.index}"
+
+
+class LandingPadInst(Instruction):
+    __match_args__ = ()
+
+    def __init__(self, type, name, parent, debugloc=None):
+        super().__init__(type, parent, debugloc)
+        self.name = name
+
+    def __str__(self):
+        return f"{get_name_str(self.name)} = landingpad {self.type} cleanup"
 
 
 class Terminator(Instruction):

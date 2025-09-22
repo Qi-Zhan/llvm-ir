@@ -30,9 +30,7 @@ class Function(Value):
     def __str__(self):
         args_str = ", ".join([str(arg) for arg in self.arguments])
         blocks_str = "\n".join([indent(str(block)) for block in self.blocks])
-        return (
-            f"define {self.return_type} @{self.name}({args_str}) {{\n{blocks_str}\n}}"
-        )
+        return f"define {self.return_type} @{self.name}({args_str}) {{\n{blocks_str}\n}}"
 
 
 class Argument(Value):

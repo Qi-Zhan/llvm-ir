@@ -4,3 +4,4 @@ from .block import BasicBlock
 from .instruction import *
 from .builder import ModuleBuilder
 from .typed import *
+from .passes import *

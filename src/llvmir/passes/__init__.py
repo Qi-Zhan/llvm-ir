@@ -1,5 +1,4 @@
-from .cfg import CFG
-from .def_use import DefUse
+from .cfg import CFG, CFGEdge, EntryNode, ExitNode
 
 
 class ModuleAnalysisManager:
@@ -16,8 +15,3 @@ class FunctionAnalysisManager:
         if self.cfg is None:
             self.cfg = CFG(self.function)
         return self.cfg
-
-    def get_def_use(self):
-        if self.def_use is None:
-            self.def_use = DefUse(self.function)
-        return self.def_use

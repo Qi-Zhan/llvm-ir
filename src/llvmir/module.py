@@ -14,19 +14,20 @@ class Module:
         self.globals = collections.OrderedDict()
         self.functions = {}
         self.declarations = {}
-        self.global_vars = []
+        self.global_variables = collections.OrderedDict()
 
     def save(self, path):
         import pickle
+
         with open(path, "wb") as f:
             pickle.dump(self, f)
 
-    def get_function(self, name) -> Optional[Function]:
+    def get_function(self, name) -> Function:
         """
         Get a function by name.
         """
         if name not in self.functions:
-            return None
+            return self.declarations[name]
         return self.functions[name]
 
     @property
@@ -49,6 +50,7 @@ class Module:
             '; ModuleID = "%s"' % (self.name,),
             'target triple = "%s"' % (self.triple,),
             'target datalayout = "%s"' % (self.data_layout,),
-            '']
+            "",
+        ]
 
         return "\n".join(lines)

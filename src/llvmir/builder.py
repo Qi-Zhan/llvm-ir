@@ -75,6 +75,10 @@ class ModuleBuilder:
         struct_types = ffi_mod.struct_types
         module = Module(source_file, name, triple, data_layout, struct_types)
         self.module = module
+        for ffi_gv in ffi_mod.global_variables:
+            gv = self.build_global_variable(ffi_gv, module)
+            self.context.save_value(ffi_gv, gv)
+            module.global_variables[gv.name] = gv
         # scan all functions first
         for ffi_func in ffi_mod.functions:
             assert ffi_func.is_function
@@ -90,11 +94,23 @@ class ModuleBuilder:
             self.build_function(function, ffi_func)
         return module
 
+    def build_global_variable(self, ffi_gv, module) -> GlobalValue:
+        type = self.build_type(ffi_gv.type)
+        name = ffi_gv.name
+        initializer = None
+        # TODO: handle initializer
+        # if ffi_gv.has_initializer:
+        #     initializer = self.build_constant(ffi_gv.initializer)
+        gv = GlobalValue(name, type, initializer)
+        return gv
+
     def build_function(self, function: Function, ffi_func) -> Function:
+        self.function = function
+        function.return_type = self.build_type(ffi_func.return_type())
+        if ffi_func.is_declaration:
+            return function
         arguments = [self.build_argument(arg) for arg in ffi_func.arguments]
         function.arguments = arguments
-        function.return_type = self.build_type(ffi_func.return_type())
-        self.function = function
         # scan all basic blocks first
         basic_blocks = []
         for ffi_bb in ffi_func.blocks:
@@ -107,6 +123,21 @@ class ModuleBuilder:
         for i, ffi_bb in enumerate(ffi_func.blocks):
             basic_block = self.build_basicblock(ffi_bb, basic_blocks[i])
         function.blocks = basic_blocks
+        # build phi node incoming values
+        for block, ffi_bb in zip(function.blocks, ffi_func.blocks):
+            for instr, ffi_instr in zip(block.instructions, ffi_bb.instructions):
+                match instr:
+                    case PhiNode(incoming_values):
+                        blocks = [
+                            self.context.get_value(incoming)
+                            for incoming in ffi_instr.incoming_blocks
+                        ]
+                        operands = [
+                            self.build_operand(operand)
+                            for operand in ffi_instr.operands
+                        ]
+                        for value, block in zip(operands, blocks):
+                            instr.add_incoming(value, block)
         # assign names
         self.build_function_name(function)
         return function
@@ -143,6 +174,13 @@ class ModuleBuilder:
                 return ICmpInst(
                     type, name, predicate, operands[0], operands[1], self.basic_block
                 )
+            case "fcmp":
+                operands = [self.build_operand(operand) for operand in instr.operands]
+                type = self.build_type(instr.type)
+                predicate = instr.predicate
+                return FCmpInst(
+                    type, name, predicate, operands[0], operands[1], self.basic_block
+                )
             case "ret":
                 operands = [self.build_operand(operand) for operand in instr.operands]
                 if len(operands) == 0:
@@ -152,28 +190,29 @@ class ModuleBuilder:
             case "call":
                 type = self.build_type(instr.type)
                 called_value = self.context.get_value(instr.called_value)
-                if type != VoidType():
-                    operands = [
-                        self.build_operand(operand) for operand in instr.operands
-                    ]
-                    return CallInst(
-                        type,
-                        name,
-                        called_value,
-                        operands[:-1],
-                        self.basic_block,
-                    )
-                else:
-                    operands = [
-                        self.build_operand(operand) for operand in instr.operands
-                    ]
-                    return CallInst(
-                        type,
-                        name,
-                        called_value,
-                        operands[:-1],
-                        self.basic_block,
-                    )
+                operands = [self.build_operand(operand) for operand in instr.operands]
+                return CallInst(
+                    type,
+                    name,
+                    called_value,
+                    operands[:-1],
+                    self.basic_block,
+                )
+            case "invoke":
+                type = self.build_type(instr.type)
+                called_value = self.context.get_value(instr.called_value)
+                operands = [self.build_operand(operand) for operand in instr.operands]
+                normal_dest = operands[-3]
+                unwind_dest = operands[-2]
+                return InvokeInst(
+                    type,
+                    name,
+                    called_value,
+                    operands[:-3],
+                    normal_dest,
+                    unwind_dest,
+                    self.basic_block,
+                )
             case "br":
                 operands = [self.build_operand(operand) for operand in instr.operands]
                 length = len(operands)
@@ -263,13 +302,7 @@ class ModuleBuilder:
                 return FPTruncInst(type, name, operand, self.basic_block)
             case "phi":
                 type = self.build_type(instr.type)
-                blocks = [
-                    self._context.get_obj_by_id(self._context.get_id(incoming))
-                    for incoming in instr.incoming_blocks
-                ]
-                operands = [self.build_operand(operand) for operand in instr.operands]
-                incoming_values = list(zip(operands, blocks))
-                return PhiNode(type, name, incoming_values, self.basic_block)
+                return PhiNode(type, name, [], self.basic_block)
             case "switch":
                 operands = [self.build_operand(operand) for operand in instr.operands]
                 condition = operands[0]
@@ -280,7 +313,7 @@ class ModuleBuilder:
                     block = operands[i + 1]
                     cases.append((value, block))
                 return SwitchInst(condition, default, cases, self.basic_block)
-            case "insertvalue":  # FIXME: not implemented
+            case "insertvalue":  # TODO: not implemented
                 operands = [self.build_operand(operand) for operand in instr.operands]
                 type = self.build_type(instr.type)
                 return InsertValueInst(
@@ -294,6 +327,10 @@ class ModuleBuilder:
                 )
             case "unreachable":
                 return UnreachableInst(self.basic_block)
+            case "landingpad":  # TODO: not implemented correctly
+                type = self.build_type(instr.type)
+                operands = [self.build_operand(operand) for operand in instr.operands]
+                return LandingPadInst(type, name, self.basic_block)
             case _:
                 assert (
                     False
@@ -382,7 +419,11 @@ class ModuleBuilder:
             case ValueKind.constant_pointer_null:
                 return Null
             case ValueKind.global_variable:
-                return GlobalValue(type_, value)
+                return self.context.get_value(constant)
+            case ValueKind.constant_fp:
+                return Constant(type_, value)
+            case ValueKind.undef_value:
+                return Undef(type_)
             case _:
                 print("build constant", constant)
                 breakpoint()

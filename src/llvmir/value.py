@@ -17,9 +17,6 @@ class Value:
     def add_use(self, use):
         self._uses.append(use)
 
-    def get_use(self, idx):
-        return self._uses[idx]
-
     @property
     def type(self):
         return self._type
@@ -35,6 +32,12 @@ class Value:
     def get_name(self):
         raise NotImplementedError(f"get_name is not implemented in {
                                   self.__class__.__name__}")
+
+    def replace_all_uses_with(self, new_value):
+        """ Replace all uses of this value with another value """
+        for use in self._uses:
+            use.replace_use_with(self, new_value)
+        self._uses.clear()
 
     def sname(self):
         """ Get the simple name of the value, specifically when other value wants to print"""

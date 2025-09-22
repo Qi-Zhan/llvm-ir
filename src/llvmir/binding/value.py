@@ -414,8 +414,8 @@ class ValueRef(ffi.ObjectRef):
         """
         Return the called value of this call instruction.
         """
-        if not self.is_instruction or self.opcode != 'call':
-            raise ValueError('expected call instruction value, got %s'
+        if not self.is_instruction or (self.opcode != 'call' and self.opcode != 'invoke'):
+            raise ValueError('expected call/invoke instruction value, got %s'
                              % (self._kind,))
         return ValueRef(ffi.lib.LLVMPY_GetCalledValue(self), 'value', self._parents)
 
