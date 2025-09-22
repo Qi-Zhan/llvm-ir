@@ -367,7 +367,10 @@ class ModuleBuilder:
                 arguments = types[1:]
                 return FunctionType(return_type, arguments)
             case TypeKind.vector:
-                assert False, "Vector type is not supported"
+                elements = [self.build_type(element) for element in type.elements]
+                element_count = type.element_count
+                assert len(elements) == 1  # Why?
+                return VectorType(element_count, elements[0])
             case TypeKind.metadata:
                 return MetadataType()
             case TypeKind.double:
@@ -381,21 +384,7 @@ class ModuleBuilder:
         assert ffi_operand.is_operand
         if ffi_operand.is_constant:
             return self.build_constant(ffi_operand)
-        match ffi_operand.value_kind:
-            case ValueKind.inline_asm:
-                type = self.build_type(ffi_operand.type)
-                return InlineAsm(type, str(ffi_operand))
-            case ValueKind.argument:
-                defined_operand = self.context.get_value(ffi_operand)
-                return defined_operand
-            case ValueKind.instruction:
-                defined_operand = self.context.get_value(ffi_operand)
-                return defined_operand
-            case ValueKind.basic_block:
-                defined_operand = self.context.get_value(ffi_operand)
-                return defined_operand
-            case _:
-                raise ValueError(f"Unsupported operand {ffi_operand}")
+        return self.context.get_value(ffi_operand)
 
     def build_argument(self, ffi_arg) -> Argument:
         assert ffi_arg.is_argument
@@ -424,6 +413,15 @@ class ModuleBuilder:
                 return Constant(type_, value)
             case ValueKind.undef_value:
                 return Undef(type_)
+            case ValueKind.constant_aggregate_zero:
+                return Constant(type_, value)
+            case (
+                ValueKind.constant_data_vector
+                | ValueKind.constant_data_array
+                | ValueKind.poison_value
+            ):
+                # TODO: parse vector elements
+                return Constant(type_, value)
             case _:
                 print("build constant", constant)
                 breakpoint()

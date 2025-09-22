@@ -132,6 +132,21 @@ class ArrayType(Type):
     def __eq__(self, other):
         return isinstance(other, ArrayType) and self.element_type == other.element_type and self.element_count == other.element_count
 
+class VectorType(Type):
+    __match_args__ = ('element_count', 'element_type')
+
+    def __init__(self, element_count: int, element_type: Type):
+        self.element_type = element_type
+        self.element_count = element_count
+
+    def size(self):
+        return self.element_count * self.element_type.size()
+
+    def __str__(self):
+        return f"<{self.element_count} x {self.element_type}>"
+
+    def __eq__(self, other):
+        return isinstance(other, VectorType) and self.element_type == other.element_type and self.element_count == other.element_count
 
 class StructType(Type):
     __match_args__ = ('name', 'elements')
