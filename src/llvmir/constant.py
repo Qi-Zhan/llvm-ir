@@ -1,4 +1,5 @@
 from .value import Value
+from .typed import PointerType
 
 
 class Constant(Value):
@@ -36,7 +37,7 @@ class ConstantInt(Constant):
 
 class Null(Constant):
     def __init__(self):
-        super().__init__(0, 0)
+        super().__init__(PointerType(0), 0)
 
     def __str__(self):
         return "null"

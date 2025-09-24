@@ -17,4 +17,5 @@ docs/gh-pages/
 .*.swp
 
 local_test
+tests/ir/
 .DS_Store

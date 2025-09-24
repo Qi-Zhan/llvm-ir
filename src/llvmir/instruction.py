@@ -94,10 +94,11 @@ class GetElementPtrInst(Instruction):
     __match_args__ = ("ptr", "indices")
 
     def __init__(
-        self, type, name, ptr: Value, indices: list[Value], parent, debugloc=None
+        self, type, source_element_type, name, ptr: Value, indices: list[Value], parent, debugloc=None
     ):
         super().__init__(type, parent, debugloc)
         self.name = name
+        self.source_element_type = source_element_type
         self.ptr = ptr
         self.indices = indices
         self.ptr.add_use(self)
@@ -106,7 +107,7 @@ class GetElementPtrInst(Instruction):
 
     def __str__(self):
         indices = ", ".join([index.sname() for index in self.indices])
-        return f"{get_name_str(self.name)} = getelementptr {self.ptr.type}, {self.ptr.sname()}, {indices}"
+        return f"{get_name_str(self.name)} = getelementptr {self.source_element_type}, {self.ptr.type} {self.ptr.sname()}, {indices}"
 
 
 class IntPredicate(enum.Enum):

@@ -408,6 +408,15 @@ class ValueRef(ffi.ObjectRef):
             raise ValueError('expected alloca instruction value, got %s'
                              % (self._kind,))
         return TypeRef(ffi.lib.LLVMPY_GetAllocatedType(self))
+    
+    def gep_source_element_type(self):
+        """
+        Return the source element type of this getelementptr instruction.
+        """
+        if not self.is_instruction or self.opcode != 'getelementptr':
+            raise ValueError('expected getelementptr instruction value, got %s'
+                             % (self._kind,))
+        return TypeRef(ffi.lib.LLVMPY_GetGEPSourceElementType(self))
 
     @property
     def called_value(self):
@@ -729,3 +738,6 @@ ffi.lib.LLVMPY_GetFunctionReturnType.restype = ffi.LLVMTypeRef
 
 ffi.lib.LLVMPY_GetAllocatedType.argtypes = [ffi.LLVMValueRef]
 ffi.lib.LLVMPY_GetAllocatedType.restype = ffi.LLVMTypeRef
+
+ffi.lib.LLVMPY_GetGEPSourceElementType.argtypes = [ffi.LLVMValueRef]
+ffi.lib.LLVMPY_GetGEPSourceElementType.restype = ffi.LLVMTypeRef

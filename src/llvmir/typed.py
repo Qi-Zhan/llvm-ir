@@ -62,7 +62,7 @@ class PointerType(Type):
         return 8
 
     def __str__(self):
-        return f"*"
+        return f"ptr"
 
     def __eq__(self, other):
         return isinstance(other, PointerType)
@@ -172,7 +172,7 @@ class StructType(Type):
         return sum(e.size() for e in self.elements[:index])
 
     def __str__(self):
-        return f"{self.name}"
+        return f"%{self.name}"
 
     def __eq__(self, other):
         return isinstance(other, StructType) and self.name == other.name

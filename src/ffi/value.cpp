@@ -501,4 +501,10 @@ LLVMPY_GetAllocatedType(LLVMValueRef instr) {
     return llvm::wrap(AI->getAllocatedType());
 }
 
+API_EXPORT(LLVMTypeRef)
+LLVMPY_GetGEPSourceElementType(LLVMValueRef Val) {
+    auto *GEP = llvm::cast<llvm::GetElementPtrInst>(llvm::unwrap(Val));
+    return llvm::wrap(GEP->getSourceElementType());
+}
+
 } // end extern "C"

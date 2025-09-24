@@ -227,8 +227,10 @@ class ModuleBuilder:
             case "getelementptr":
                 operands = [self.build_operand(operand) for operand in instr.operands]
                 type = self.build_type(instr.type)
+                source_element_type = instr.gep_source_element_type()
+                source_element_type = self.build_type(source_element_type)
                 return GetElementPtrInst(
-                    type, name, operands[0], operands[1:], self.basic_block
+                    type, source_element_type, name, operands[0], operands[1:], self.basic_block
                 )
             case (
                 "add"
